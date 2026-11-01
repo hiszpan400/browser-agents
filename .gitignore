@@ -1,0 +1,13 @@
+.env
+chrome-profile/
+__pycache__/
+.venv/
+*.pyc
+*.pyo
+guardian-ai-patch.md
+agents/ghost_browser/.venv/
+agents/jev_ultrafast/.env
+agents/laya_ultrafast/.venv/
+agents/laya_ultrafast/.env
+uv.lock
+agents/
