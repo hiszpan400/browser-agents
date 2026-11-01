@@ -1,8 +1,8 @@
 """
-JARVIS Browser Agents — FastAPI service (hardened v3)
+Browser Agents — FastAPI service (hardened v3)
 Security layers:
   1. API key auth (X-API-Key header)
-  2. LAN-only binding (192.168.0.187, not 0.0.0.0)
+  2. LAN-only binding (configure HOST in .env, not 0.0.0.0)
   3. ACL: 40 blocked domains + sensitive keyword scan
   4. URL extraction from goal text + ACL
   5. Max goal length (400 chars)
@@ -36,12 +36,13 @@ load_dotenv(Path(__file__).parent / ".env")
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("browser-agents")
 
-app = FastAPI(title="JARVIS Browser Agents", version="3.0")
+app = FastAPI(title="Browser Agents", version="3.0")
 
-# CORS — only LAN origins
+# CORS — configure allowed origins via CORS_ORIGINS env var (comma-separated)
+_cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://192.168.0.76", "http://192.168.0.187", "http://localhost"],
+    allow_origins=_cors_origins,
     allow_methods=["GET", "POST"],
     allow_headers=["X-API-Key", "Content-Type"],
 )
@@ -111,10 +112,8 @@ BLOCKED_DOMAINS: set[str] = {
     "app.tailscale.com", "admin.cloudflare.com",
     # GitHub (tokens/secrets)
     "github.com",
-    # Local services (protect RPi admin)
-    "192.168.0.76", "192.168.0.187", "localhost", "127.0.0.1",
-    "100.75.233.40",  # RPi Tailscale
-    "100.71.250.62",  # Oracle Cloud
+    # Local services — add your LAN IPs via BLOCKED_LOCAL_IPS env var
+    "localhost", "127.0.0.1",
 }
 
 BLOCKED_GOAL_PATTERNS: list[str] = [
@@ -730,7 +729,7 @@ def _extract_result(result) -> str:
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8900))
-    host = os.getenv("HOST", "192.168.0.187")
-    log.info("JARVIS Browser Agents v3 | %s:%d | auth=%s | acl=%d domains",
+    host = os.getenv("HOST", "127.0.0.1")
+    log.info("Browser Agents v3 | %s:%d | auth=%s | acl=%d domains",
              host, port, "on" if API_KEY else "off", len(BLOCKED_DOMAINS))
     uvicorn.run(app, host=host, port=port, log_level="info")
